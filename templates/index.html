@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BankNifty Dispersion Trade Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+        
+        .navbar {
+            background-color: var(--primary-color);
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--secondary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: 600;
+        }
+        
+        .premium-positive {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .premium-negative {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .alert-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--dark-color);
+        }
+        
+        .settings-panel {
+            background-color: var(--light-color);
+            border-radius: 10px;
+            padding: 15px;
+        }
+        
+        .last-updated {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+        
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+        
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .export-btn {
+            background-color: #2ecc71;
+            border: none;
+        }
+        
+        .export-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .historical-chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+        
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-chart-line me-2"></i>BankNifty Dispersion Monitor
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="settings-toggle">
+                            <i class="fas fa-cog me-1"></i>Settings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="login-status">
+                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Login Form -->
+    <div class="container" id="login-container">
+        <div class="login-container">
+            <h3 class="text-center mb-4">Zerodha Login</h3>
+            <div class="mb-3">
+                <label class="form-label">API Key</label>
+                <input type="text" class="form-control" id="api-key" value="myh2vafxnb137700" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">API Secret</label>
+                <input type="password" class="form-control" id="api-secret" value="7ayjvayso5ma6y8dyp0ad64i8ybh06mc">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Redirect URL</label>
+                <input type="text" class="form-control" id="redirect-url" value="http://127.0.0.1:5000/">
+            </div>
+            <button class="btn btn-primary w-100" onclick="initZerodhaLogin()">
+                <i class="fas fa-sign-in-alt me-1"></i>Connect to Zerodha
+            </button>
+            <div class="mt-3 text-center">
+                <button class="btn btn-secondary" onclick="useMockData()">
+                    Use Mock Data (Demo)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Initially Hidden) -->
+    <div class="container mt-4" id="main-content" style="display: none;">
+        <!-- Notification Alert -->
+        <div class="notification" id="notification">
+            <span id="notification-text"></span>
+            <button type="button" class="btn-close btn-close-white float-end" onclick="hideNotification()"></button>
+        </div>
+
+        <div class="row">
+            <!-- Settings Panel (Collapsed by default) -->
+            <div class="col-lg-3 d-none" id="settings-panel">
+                <div class="settings-panel">
+                    <h5><i class="fas fa-sliders-h me-2"></i>Settings</h5>
+                    <hr>
+                    <div class="mb-3">
+                        <label class="form-label">Refresh Interval (seconds)</label>
+                        <input type="number" class="form-control" id="refresh-interval" value="5" min="2">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alert Threshold</label>
+                        <input type="number" class="form-control" id="alert-threshold" value="10000">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">OTM Level</label>
+                        <select class="form-select" id="otm-level">
+                            <option value="0">ATM</option>
+                            <option value="1">OTM 1</option>
+                            <option value="2">OTM 2</option>
+                            <option value="3">OTM 3</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="applySettings()">Apply Settings</button>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-bell me-2"></i>Alerts
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" id="alert-toggle" checked>
+                            <label class="form-check-label" for="alert-toggle">Enable Alerts</label>
+                        </div>
+                        <div class="alert alert-info p-2">
+                            <small>Alerts will trigger when net premium exceeds threshold</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-lg-9">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-coins me-2"></i>Net Premium</span>
+                                <span class="last-updated">Updated: <span id="last-updated">-</span></span>
+                            </div>
+                            <div class="card-body text-center">
+                                <h2 id="net-premium" class="premium-positive">0</h2>
+                                <p class="text-muted">Buy BN Straddle, Sell Constituent Straddles</p>
+                                <div class="mt-3">
+                                    <button class="btn btn-primary me-2" onclick="refreshData()">
+                                        <i class="fas fa-sync-alt me-1"></i>Refresh
+                                    </button>
+                                    <button class="btn export-btn" onclick="exportData()">
+                                        <i class="fas fa-download me-1"></i>Export
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-info-circle me-2"></i>BankNifty Details
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Spot</th>
+                                        <td id="bn-spot">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>ATM Strike</th>
+                                        <td id="bn-strike">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Call Premium</th>
+                                        <td id="bn-call">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Put Premium</th>
+                                        <td id="bn-put">0</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Straddle Premium</th>
+                                        <td id="bn-straddle">0</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="fas fa-history me-2"></i>Historical Premium
+                            </div>
+                            <div class="card-body">
+                                <div class="historical-chart-container">
+                                    <canvas id="historical-chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="fas fa-list me-2"></i>Trade Parameters</span>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <th>Total Investment</th>
+                                        <td id="total-investment">₹6,00,000</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Current OTM Level</th>
+                                        <td id="current-otm">ATM (0)</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Alert Threshold</th>
+                                        <td id="current-threshold">₹10,000</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Last Trade Signal</th>
+                                        <td id="last-signal">None</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Zerodha Status</th>
+                                        <td id="zerodha-status">Not Connected</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span><i class="fas fa-table me-2"></i>Constituents</span>
+                        <div>
+                            <span class="badge bg-primary">OTM Level: <span id="otm-badge">0</span></span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Weight</th>
+                                        <th>Spot</th>
+                                        <th>ATM Strike</th>
+                                        <th>Call Premium</th>
+                                        <th>Put Premium</th>
+                                        <th>Straddle Premium</th>
+                                        <th>Lot Size</th>
+                                        <th>Normalized Lots</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="constituents-table">
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentData = {};
+        let historicalData = [];
+        let refreshInterval;
+        let historicalChart;
+        let lastAlert = 0;
+        let isUsingMockData = false;
+        let zerodhaConnected = false;
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeHistoricalChart();
+            loadHistoricalData();
+            
+            // Settings toggle
+            document.getElementById('settings-toggle').addEventListener('click', function(e) {
+                e.preventDefault();
+                const settingsPanel = document.getElementById('settings-panel');
+                const mainContent = document.getElementById('main-content').querySelector('.col-lg-9');
+                
+                if (settingsPanel.classList.contains('d-none')) {
+                    settingsPanel.classList.remove('d-none');
+                    mainContent.classList.remove('col-lg-9');
+                    mainContent.classList.add('col-lg-9');
+                } else {
+                    settingsPanel.classList.add('d-none');
+                    mainContent.classList.remove('col-lg-9');
+                    mainContent.classList.add('col-lg-12');
+                }
+            });
+        });
+        
+        // Initialize historical chart
+        function initializeHistoricalChart() {
+            const ctx = document.getElementById('historical-chart').getContext('2d');
+            historicalChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Net Premium',
+                        data: [],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load historical data (simulated)
+        function loadHistoricalData() {
+            // In a real implementation, this would fetch from your backend
+            const now = new Date();
+            historicalData = [];
+            
+            // Generate sample historical data
+            for (let i = 24; i >= 0; i--) {
+                const time = new Date(now);
+                time.setHours(now.getHours() - i);
+                
+                historicalData.push({
+                    time: time.toLocaleTimeString(),
+                    premium: Math.floor(Math.random() * 20000) - 5000
+                });
+            }
+            
+            // Update chart
+            updateHistoricalChart();
+        }
+        
+        // Update historical chart with current data
+        function updateHistoricalChart() {
+            historicalChart.data.labels = historicalData.map(item => item.time);
+            historicalChart.data.datasets[0].data = historicalData.map(item => item.premium);
+            historicalChart.update();
+        }
+        
+        // Start data refresh interval
+        function startDataRefresh() {
+            const interval = parseInt(document.getElementById('refresh-interval').value) * 1000;
+            
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            
+            refreshInterval = setInterval(function() {
+                refreshData();
+            }, interval);
+        }
+        
+        // Refresh data function
+        function refreshData() {
+            // Show loading state
+            document.getElementById('net-premium').innerHTML = '<div class="loader"></div>';
+            
+            if (isUsingMockData) {
+                // Use mock data
+                simulateLiveData();
+            } else if (zerodhaConnected) {
+                // Fetch real data from backend
+                fetch('/api/data')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateUI(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                        showNotification('Error fetching data from Zerodha');
+                    });
+            }
+            
+            // Update last updated timestamp
+            document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+        }
+        
+        // Apply settings
+        function applySettings() {
+            const threshold = document.getElementById('alert-threshold').value;
+            const otmLevel = document.getElementById('otm-level').value;
+            
+            document.getElementById('current-threshold').textContent = `₹${threshold}`;
+            document.getElementById('current-otm').textContent = `OTM ${otmLevel}`;
+            document.getElementById('otm-badge').textContent = otmLevel;
+            
+            startDataRefresh();
+            
+            // Show confirmation
+            showNotification('Settings applied successfully!');
+        }
+        
+        // Export data function
+        function exportData() {
+            // In a real implementation, this would fetch data and create a CSV/Excel file
+            showNotification('Preparing data for export...');
+            
+            // Simulate export preparation
+            setTimeout(function() {
+                showNotification('Data exported successfully!');
+                
+                // Create a dummy download (in real implementation, this would be a real file)
+                const dummyData = "Symbol,Weight,Spot,Straddle Premium,Lot Size\n";
+                const blob = new Blob([dummyData], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'dispersion_data.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }, 1500);
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notification.style.display = 'block';
+            
+            // Auto hide after 3 seconds
+            setTimeout(hideNotification, 3000);
+        }
+        
+        // Hide notification
+        function hideNotification() {
+            document.getElementById('notification').style.display = 'none';
+        }
+        
+        // Initialize Zerodha login
+        function initZerodhaLogin() {
+            const apiKey = document.getElementById('api-key').value;
+            const apiSecret = document.getElementById('api-secret').value;
+            const redirectUrl = document.getElementById('redirect-url').value;
+            
+            showNotification('Initiating Zerodha connection...');
+            
+            // In a real implementation, this would call the backend to initiate login
+            setTimeout(function() {
+                // Simulate successful connection
+                zerodhaConnected = true;
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                document.getElementById('zerodha-status').textContent = 'Connected';
+                document.getElementById('login-status').innerHTML = '<i class="fas fa-check-circle me-1"></i>Connected';
+                
+                showNotification('Successfully connected to Zerodha!');
+                startDataRefresh();
+            }, 2000);
+        }
+        
+        // Use mock data for demo
+        function useMockData() {
+            isUsingMockData = true;
+            zerodhaConnected = false;
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('zerodha-status').textContent = 'Using Mock Data';
+            document.getElementById('login-status').innerHTML = '<i class="fas fa-demo me-1"></i>Demo Mode';
+            
+            showNotification('Using mock data for demonstration');
+            startDataRefresh();
+        }
+        
+        // Update UI with data
+        function updateUI(data) {
+            // Update BankNifty details
+            document.getElementById('bn-spot').textContent = data.banknifty.spot.toLocaleString();
+            document.getElementById('bn-strike').textContent = data.banknifty.atm_strike.toLocaleString();
+            document.getElementById('bn-call').textContent = data.banknifty.call_premium.toLocaleString();
+            document.getElementById('bn-put').textContent = data.banknifty.put_premium.toLocaleString();
+            document.getElementById('bn-straddle').textContent = data.banknifty.straddle_premium.toLocaleString();
+            
+            // Update constituents table
+            let constituentsHTML = '';
+            
+            for (const [symbol, details] of Object.entries(data.constituents)) {
+                constituentsHTML += `
+                    <tr>
+                        <td>${symbol}</td>
+                        <td>${(details.weight * 100).toFixed(2)}%</td>
+                        <td>${details.spot.toLocaleString()}</td>
+                        <td>${details.atm_strike.toLocaleString()}</td>
+                        <td>${details.call_premium.toLocaleString()}</td>
+                        <td>${details.put_premium.toLocaleString()}</td>
+                        <td>${details.straddle_premium.toLocaleString()}</td>
+                        <td>${details.lot_size}</td>
+                        <td>${data.normalized_lots ? data.normalized_lots[symbol] : 1}</td>
+                    </tr>
+                `;
+            }
+            
+            document.getElementById('constituents-table').innerHTML = constituentsHTML;
+            
+            // Update net premium display
+            const netPremiumElem = document.getElementById('net-premium');
+            netPremiumElem.textContent = `₹${data.net_premium.toLocaleString()}`;
+            netPremiumElem.className = data.net_premium >= 0 ? 'premium-positive' : 'premium-negative';
+            
+            // Add to historical data
+            const now = new Date();
+            historicalData.push({
+                time: now.toLocaleTimeString(),
+                premium: data.net_premium
+            });
+            
+            // Keep only last 25 data points
+            if (historicalData.length > 25) {
+                historicalData.shift();
+            }
+            
+            // Update historical chart
+            updateHistoricalChart();
+            
+            // Check for alerts
+            checkForAlerts(data.net_premium);
+        }
+        
+        // Simulate live data (replace with real API calls in production)
+        function simulateLiveData() {
+            // Simulate BankNifty data
+            const bnSpot = 45000 + Math.floor(Math.random() * 200) - 100;
+            const bnStrike = Math.round(bnSpot / 100) * 100;
+            const bnCall = Math.floor(Math.random() * 200) + 100;
+            const bnPut = Math.floor(Math.random() * 200) + 100;
+            const bnStraddle = bnCall + bnPut;
+            
+            // Simulate constituents data
+            const constituents = [
+                { symbol: 'HDFCBANK', weight: 0.25, lotSize: 15 },
+                { symbol: 'ICICIBANK', weight: 0.20, lotSize: 25 },
+                { symbol: 'KOTAKBANK', weight: 0.15, lotSize: 15 },
+                { symbol: 'AXISBANK', weight: 0.14, lotSize: 15 },
+                { symbol: 'SBIN', weight: 0.13, lotSize: 15 },
+                { symbol: 'INDUSINDBK', weight: 0.06, lotSize: 20 },
+                { symbol: 'BANKOFBARODA', weight: 0.04, lotSize: 15 },
+                { symbol: 'AUBANK', weight: 0.03, lotSize: 10 }
+            ];
+            
+            let constituentsData = {};
+            let totalConstituentPremium = 0;
+            const minWeight = 0.03; // Minimum weight in the list
+            
+            for (const stock of constituents) {
+                const spot = Math.floor(Math.random() * 1500) + 500;
+                const strike = Math.round(spot / 10) * 10;
+                const callPremium = Math.floor(Math.random() * 40) + 10;
+                const putPremium = Math.floor(Math.random() * 40) + 10;
+                const straddlePremium = callPremium + putPremium;
+                
+                // Calculate normalized lots based on weight
+                const normalizedLots = Math.max(1, Math.round(stock.weight / minWeight));
+                
+                // Add to total constituent premium
+                totalConstituentPremium += normalizedLots * stock.lotSize * straddlePremium;
+                
+                constituentsData[stock.symbol] = {
+                    spot: spot,
+                    atm_strike: strike,
+                    call_premium: callPremium,
+                    put_premium: putPremium,
+                    straddle_premium: straddlePremium,
+                    weight: stock.weight,
+                    lot_size: stock.lotSize
+                };
+            }
+            
+            // Calculate net premium
+            const bankniftyPremium = 25 * bnStraddle; // BN lot size is 25
+            const netPremium = bankniftyPremium - totalConstituentPremium;
+            
+            // Prepare data for UI
+            const data = {
+                banknifty: {
+                    spot: bnSpot,
+                    atm_strike: bnStrike,
+                    call_premium: bnCall,
+                    put_premium: bnPut,
+                    straddle_premium: bnStraddle
+                },
+                constituents: constituentsData,
+                net_premium: netPremium,
+                last_updated: new Date().toISOString()
+            };
+            
+            // Update UI
+            updateUI(data);
+        }
+        
+        // Check for alerts
+        function checkForAlerts(netPremium) {
+            const alertThreshold = parseInt(document.getElementById('alert-threshold').value);
+            const alertToggle = document.getElementById('alert-toggle').checked;
+            
+            if (!alertToggle) return;
+            
+            const absolutePremium = Math.abs(netPremium);
+            
+            if (absolutePremium >= alertThreshold) {
+                // Avoid spamming the same alert
+                const now = Date.now();
+                if (now - lastAlert > 30000) { // 30 seconds cooldown
+                    lastAlert = now;
+                    const direction = netPremium >= 0 ? 'positive' : 'negative';
+                    showNotification(`Alert: Net premium is ₹${netPremium.toLocaleString()} (${direction})`);
+                    
+                    // Update last signal
+                    document.getElementById('last-signal').textContent = 
+                        `${new Date().toLocaleTimeString()} - ₹${netPremium.toLocaleString()} (${direction})`;
+                }
+            }
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
