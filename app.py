@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta
 import json
 from random import random
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -14,9 +15,9 @@ app.secret_key = 'banknifty_dispersion_secret_key'
 CORS(app)
 
 # Zerodha API Configuration
-API_KEY = "myh2vafxnb137700"
-API_SECRET = "7ayjvayso5ma6y8dyp0ad64i8ybh06mc"
-REDIRECT_URL = "http://127.0.0.1:5000/"
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+REDIRECT_URL = os.getenv("REDIRECT_URL")
 
 # Initialize KiteConnect
 kite = KiteConnect(api_key=API_KEY)
