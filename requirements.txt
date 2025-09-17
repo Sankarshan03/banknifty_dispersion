@@ -1,0 +1,33 @@
+# BankNifty Dispersion Trading App - Requirements
+# Core Framework
+Flask
+Flask-CORS
+Flask-SocketIO
+
+# Zerodha API Integration
+kiteconnect
+
+# Authentication & Security
+pyotp
+
+# Data Processing & Analysis
+pandas
+
+# Environment Variables
+python-dotenv
+
+# WebSocket & Real-time Communication
+python-socketio
+eventlet
+
+# HTTP Client (used by kiteconnect)
+requests
+
+# JSON Web Tokens (if needed for auth)
+PyJWT
+
+# Date/Time Utilities
+python-dateutil
+
+# Scientific Computing (for calculations)
+numpy
