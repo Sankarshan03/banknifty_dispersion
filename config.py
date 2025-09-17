@@ -28,16 +28,16 @@ MONITORING_DAYS_BEFORE_EXPIRY = 45
 
 # Enhanced BankNifty constituents with accurate weights and lot sizes
 BANKNIFTY_CONSTITUENTS = [
-    {'symbol': 'HDFCBANK', 'weight': 0.2891, 'lot_size': 550, 'instrument_token': 341249},
-    {'symbol': 'ICICIBANK', 'weight': 0.2234, 'lot_size': 1375, 'instrument_token': 1270529},
-    {'symbol': 'KOTAKBANK', 'weight': 0.1156, 'lot_size': 400, 'instrument_token': 492033},
-    {'symbol': 'AXISBANK', 'weight': 0.1089, 'lot_size': 1200, 'instrument_token': 1510401},
-    {'symbol': 'SBIN', 'weight': 0.0889, 'lot_size': 1500, 'instrument_token': 779521},
-    {'symbol': 'INDUSINDBK', 'weight': 0.0456, 'lot_size': 900, 'instrument_token': 1346049},
-    {'symbol': 'BANKBARODA', 'weight': 0.0234, 'lot_size': 2700, 'instrument_token': 1195009},
-    {'symbol': 'AUBANK', 'weight': 0.0178, 'lot_size': 1800, 'instrument_token': 108033},
-    {'symbol': 'PNB', 'weight': 0.0156, 'lot_size': 4000, 'instrument_token': 780521},
-    {'symbol': 'IDFCFIRSTB', 'weight': 0.0134, 'lot_size': 6250, 'instrument_token': 2863105}
+    {'symbol': 'HDFCBANK', 'weight': 0.2861, 'lot_size': 550, 'instrument_token': 341249},
+    {'symbol': 'ICICIBANK', 'weight': 0.2605, 'lot_size': 1375, 'instrument_token': 1270529},
+    {'symbol': 'SBIN', 'weight': 0.0911, 'lot_size': 1500, 'instrument_token': 779521},
+    {'symbol': 'KOTAKBANK', 'weight': 0.0810, 'lot_size': 400, 'instrument_token': 492033},
+    {'symbol': 'AXISBANK', 'weight': 0.0782, 'lot_size': 1200, 'instrument_token': 1510401},
+    {'symbol': 'INDUSINDBK', 'weight': 0.0337, 'lot_size': 900, 'instrument_token': 1346049},
+    {'symbol': 'FEDERALBNK', 'weight': 0.0325, 'lot_size': 10000, 'instrument_token': 1023745},
+    {'symbol': 'IDFCFIRSTB', 'weight': 0.0311, 'lot_size': 6250, 'instrument_token': 2863105},
+    {'symbol': 'BANKBARODA', 'weight': 0.0298, 'lot_size': 2700, 'instrument_token': 1195009},
+    {'symbol': 'AUBANK', 'weight': 0.0279, 'lot_size': 1800, 'instrument_token': 108033}
 ]
 
 # BankNifty index details
